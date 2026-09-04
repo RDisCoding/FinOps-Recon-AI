@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { ReconciliationException } from '../types/reconciliation';
-import { generateDisputePDF, simulateWebhookEscalation } from '../services/disputeActionService';
+import { generateDisputePDF, contestRazorpayDispute } from '../services/disputeActionService';
 import type { EscalationStatus } from '../services/disputeActionService';
 import { X, Copy, Check, ShieldAlert, IndianRupee, FileText, Download, Send, CheckCircle2 } from 'lucide-react';
 
@@ -13,6 +13,8 @@ export const DisputeModal: React.FC<DisputeModalProps> = ({ exception, onClose }
   const [copied, setCopied] = useState(false);
   const [isEscalating, setIsEscalating] = useState(false);
   const [escalation, setEscalation] = useState<EscalationStatus | null>(null);
+  const [disputeId, setDisputeId] = useState('');
+  const [escalationError, setEscalationError] = useState<string | null>(null);
 
   if (!exception) return null;
 
@@ -27,10 +29,20 @@ export const DisputeModal: React.FC<DisputeModalProps> = ({ exception, onClose }
   };
 
   const handleSendWebhook = async () => {
+    if (!disputeId.trim()) {
+      setEscalationError('Enter the Razorpay dispute ID (disp_...) before contesting it.');
+      return;
+    }
     setIsEscalating(true);
-    const res = await simulateWebhookEscalation(exception);
-    setEscalation(res);
-    setIsEscalating(false);
+    setEscalationError(null);
+    try {
+      const res = await contestRazorpayDispute(exception, disputeId.trim());
+      setEscalation(res);
+    } catch (error) {
+      setEscalationError(error instanceof Error ? error.message : 'Unable to reach Razorpay.');
+    } finally {
+      setIsEscalating(false);
+    }
   };
 
   return (
@@ -90,18 +102,34 @@ export const DisputeModal: React.FC<DisputeModalProps> = ({ exception, onClose }
           </div>
 
           {/* Live Webhook Escalation Status Box */}
+          <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2">
+            <label className="text-xs font-semibold text-slate-300 block" htmlFor="razorpay-dispute-id">
+              Razorpay dispute ID
+            </label>
+            <input
+              id="razorpay-dispute-id"
+              value={disputeId}
+              onChange={event => setDisputeId(event.target.value)}
+              placeholder="disp_AHfqOvkldwsbqt"
+              className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-rose-500"
+            />
+            <p className="text-[10px] text-slate-500">This contests an existing Razorpay dispute in draft mode through the secure server adapter.</p>
+          </div>
+
+          {escalationError && <p className="text-xs text-rose-300 bg-rose-950/30 border border-rose-500/30 rounded-lg p-3">{escalationError}</p>}
+
           {escalation && (
             <div className="p-4 rounded-xl bg-emerald-950/30 border border-emerald-500/40 space-y-2 text-xs">
               <div className="flex items-center justify-between">
                 <span className="font-bold text-emerald-400 flex items-center gap-1.5">
                   <CheckCircle2 className="w-4 h-4" />
-                  Razorpay Webhook Escalation Active
+                  Razorpay Dispute Contest Submitted
                 </span>
                 <span className="font-mono text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded font-bold">
                   {escalation.ticketId}
                 </span>
               </div>
-              <p className="text-slate-300">Status: <strong className="text-emerald-400">ESCALATED_UNDER_REVIEW</strong> (SLA 24 Hours)</p>
+              <p className="text-slate-300">Status: <strong className="text-emerald-400">{escalation.status}</strong></p>
               <pre className="p-2 rounded bg-slate-950 text-[10px] text-slate-400 font-mono overflow-x-auto">
                 {escalation.webhookResponse}
               </pre>
@@ -145,7 +173,7 @@ export const DisputeModal: React.FC<DisputeModalProps> = ({ exception, onClose }
               className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold bg-rose-600 hover:bg-rose-500 text-white shadow-lg shadow-rose-600/30 transition-all cursor-pointer disabled:opacity-50"
             >
               <Send className={`w-4 h-4 ${isEscalating ? 'animate-spin' : ''}`} />
-              {isEscalating ? 'Escalating Webhook...' : escalation ? 'Escalated to Razorpay Support' : 'Send Dispute API Webhook'}
+              {isEscalating ? 'Contesting Dispute...' : escalation ? 'Dispute Contest Sent' : 'Contest Razorpay Dispute'}
             </button>
           </div>
 

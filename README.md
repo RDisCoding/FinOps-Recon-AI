@@ -210,6 +210,17 @@ npm run build
 npm test
 ```
 
+### Live Razorpay test-mode contest flow
+
+Deploy this Vite app to Vercel so the `api/` serverless function is deployed with it. In the Vercel project settings, add these server-only environment variables using Razorpay **Test Mode** keys:
+
+```env
+RAZORPAY_KEY_ID=rzp_test_...
+RAZORPAY_KEY_SECRET=...
+```
+
+The Dispute modal requires an existing Razorpay `disp_...` ID and sends a draft contest request to Razorpay. Razorpay disputes originate from a customer or issuing bank; the merchant contests them with evidence. Submitting for review requires at least one Razorpay document ID, so this app intentionally uses the documented `action: draft` flow until evidence upload is implemented.
+
 ---
 
 ## 7. Verification & Performance Summary

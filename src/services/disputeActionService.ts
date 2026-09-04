@@ -88,25 +88,28 @@ export function generateDisputePDF(exception: ReconciliationException) {
   printWindow.document.close();
 }
 
-export async function simulateWebhookEscalation(
-  exception: ReconciliationException
+export async function contestRazorpayDispute(
+  exception: ReconciliationException,
+  disputeId: string
 ): Promise<EscalationStatus> {
-  // Simulate 1 second API network latency
-  await new Promise(resolve => setTimeout(resolve, 800));
+  const response = await fetch('/api/razorpay/dispute-contest', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      disputeId,
+      amount: Math.round(exception.financial_leakage * 100),
+      summary: exception.dispute_ticket_draft.slice(0, 1000)
+    })
+  });
+  const payload = await response.json() as { error?: string; dispute?: { id?: string; status?: string } };
+  if (!response.ok) throw new Error(payload.error || 'Razorpay dispute request failed');
 
-  const ticketId = `RZP-DISP-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+  const razorpayStatus = payload.dispute?.status || 'under_review';
 
   return {
-    ticketId,
-    status: 'ESCALATED_UNDER_REVIEW',
+    ticketId: payload.dispute?.id || disputeId,
+    status: razorpayStatus === 'under_review' ? 'ESCALATED_UNDER_REVIEW' : 'PENDING',
     escalatedAt: new Date().toISOString(),
-    webhookResponse: JSON.stringify({
-      status: 201,
-      ticket_id: ticketId,
-      dispute_type: exception.error_type,
-      merchant_claim_inr: exception.financial_leakage,
-      razorpay_sla: '24-48 Hours',
-      gateway_status: 'QUEUED_FOR_MERCHANT_CREDIT'
-    }, null, 2)
+    webhookResponse: JSON.stringify({ ...payload.dispute, amount_inr: exception.financial_leakage }, null, 2)
   };
 }
