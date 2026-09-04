@@ -15,12 +15,22 @@ export function runReconciliationAudit(dataset: SyntheticDataset): {
   const startTime = performance.now();
   const exceptions: ReconciliationException[] = [];
   const orderStatusMap = new Map<string, { status: 'MATCHED' | 'DISCREPANCY'; errors: ErrorType[] }>();
+  let malformedRecordsCount = 0;
 
   const rpLogMap = new Map<string, RazorpaySettlementLog>();
-  dataset.razorpay_logs.forEach(log => rpLogMap.set(log.order_id, log));
+  dataset.razorpay_logs.forEach(log => {
+    if (isValidSettlementLog(log)) rpLogMap.set(log.order_id, log);
+    else malformedRecordsCount++;
+  });
 
   const bankCreditMap = new Map<string, number>();
-  dataset.bank_credits.forEach(b => bankCreditMap.set(b.payout_batch_id, b.credit_amount));
+  dataset.bank_credits.forEach(bankCredit => {
+    if (typeof bankCredit.payout_batch_id === 'string' && Number.isFinite(bankCredit.credit_amount)) {
+      bankCreditMap.set(bankCredit.payout_batch_id, bankCredit.credit_amount);
+    } else {
+      malformedRecordsCount++;
+    }
+  });
 
   const errorsByType: Record<ErrorType, { count: number; leakage_inr: number }> = {
     MDR_OVERCHARGE: { count: 0, leakage_inr: 0 },
@@ -34,10 +44,17 @@ export function runReconciliationAudit(dataset: SyntheticDataset): {
   let totalSettledValueInr = 0;
   let matchedOrdersCount = 0;
   let discrepancyOrdersCount = 0;
+  let validMerchantOrderCount = 0;
 
   const batchOrderSumsMap = new Map<string, { count: number; expectedSettlement: number }>();
 
   for (const merchantOrder of dataset.merchant_orders) {
+    if (!isValidMerchantOrder(merchantOrder)) {
+      malformedRecordsCount++;
+      continue;
+    }
+    validMerchantOrderCount++;
+
     const orderId = merchantOrder.order_id;
     totalOrderValueInr += merchantOrder.gross_amount;
     
@@ -240,7 +257,9 @@ export function runReconciliationAudit(dataset: SyntheticDataset): {
     });
   }
 
-  const matchRate = Math.round((matchedOrdersCount / dataset.merchant_orders.length) * 1000) / 10;
+  const matchRate = validMerchantOrderCount === 0
+    ? 0
+    : Math.round((matchedOrdersCount / validMerchantOrderCount) * 1000) / 10;
   
   let totalLeakage = 0;
   Object.values(errorsByType).forEach(e => {
@@ -250,7 +269,7 @@ export function runReconciliationAudit(dataset: SyntheticDataset): {
   const endTime = performance.now();
 
   const summary: AuditSummary = {
-    total_orders_audited: dataset.merchant_orders.length,
+    total_orders_audited: validMerchantOrderCount,
     total_order_value_inr: Math.round(totalOrderValueInr * 100) / 100,
     total_settled_value_inr: Math.round(totalSettledValueInr * 100) / 100,
     total_bank_credited_inr: Math.round(totalBankCreditedInr * 100) / 100,
@@ -261,7 +280,8 @@ export function runReconciliationAudit(dataset: SyntheticDataset): {
     errors_by_type: errorsByType,
     batch_summaries: batchSummaries,
     execution_time_ms: Math.round((endTime - startTime) * 10) / 10,
-    audit_timestamp: new Date().toISOString()
+    audit_timestamp: new Date().toISOString(),
+    malformed_records_count: malformedRecordsCount
   };
 
   return {
@@ -269,6 +289,23 @@ export function runReconciliationAudit(dataset: SyntheticDataset): {
     exceptions,
     orderStatusMap
   };
+}
+
+function isValidMerchantOrder(order: MerchantOrder): boolean {
+  return Boolean(order && typeof order.order_id === 'string' && order.order_id.length > 0) &&
+    [order.gross_amount, order.net_order_amount, order.agreed_mdr_rate].every(Number.isFinite);
+}
+
+function isValidSettlementLog(log: RazorpaySettlementLog): boolean {
+  return Boolean(log && typeof log.order_id === 'string' && log.order_id.length > 0) &&
+    [
+      log.mdr_fee_rate_charged,
+      log.mdr_fee_amount,
+      log.gst_amount,
+      log.deducted_promo_amount,
+      log.refund_deduction,
+      log.net_settlement_amount
+    ].every(Number.isFinite);
 }
 
 function generateDisputeTicket(

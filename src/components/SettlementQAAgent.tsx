@@ -36,6 +36,7 @@ export const SettlementQAAgent: React.FC<SettlementQAAgentProps> = ({
   ]);
 
   const [inputQuery, setInputQuery] = useState('');
+  const [isThinking, setIsThinking] = useState(false);
 
   const handleSend = (textToSend?: string) => {
     const query = textToSend || inputQuery;
@@ -48,9 +49,11 @@ export const SettlementQAAgent: React.FC<SettlementQAAgentProps> = ({
       timestamp: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
     };
 
-    const agentResp = generateAgentResponse(query, summary, exceptions);
-
-    setMessages(prev => [...prev, userMsg, agentResp]);
+    setMessages(prev => [...prev, userMsg]);
+    setIsThinking(true);
+    void generateAgentResponse(query, summary, exceptions).then(agentResp => {
+      setMessages(prev => [...prev, agentResp]);
+    }).finally(() => setIsThinking(false));
     if (!textToSend) setInputQuery('');
   };
 
@@ -172,15 +175,18 @@ export const SettlementQAAgent: React.FC<SettlementQAAgentProps> = ({
                 placeholder="Ask about UTRs, GST math, or payout drops..."
                 value={inputQuery}
                 onChange={e => setInputQuery(e.target.value)}
-                className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500 transition-all"
+                disabled={isThinking}
+                className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500 transition-all disabled:opacity-60"
               />
               <button
                 type="submit"
+                disabled={isThinking}
                 className="w-10 h-10 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white flex items-center justify-center shadow-md transition-all cursor-pointer"
               >
                 <Send className="w-4 h-4" />
               </button>
             </form>
+            {isThinking && <p className="mt-2 text-[10px] text-cyan-400">Analyzing the current audit context...</p>}
           </div>
 
         </div>

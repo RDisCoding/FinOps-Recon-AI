@@ -98,6 +98,7 @@ export interface AuditSummary {
   
   execution_time_ms: number;
   audit_timestamp: string;
+  malformed_records_count: number;
 }
 
 export interface SyntheticDataset {

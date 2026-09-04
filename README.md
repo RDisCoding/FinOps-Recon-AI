@@ -5,6 +5,7 @@
 [![Track](https://img.shields.io/badge/Track-04:_AI_Finance_Controller-6366f1?style=for-the-badge&logo=razorpay)](https://razorpay.com)
 [![Status](https://img.shields.io/badge/Status-Production_Ready-10b981?style=for-the-badge)](https://github.com/rdisworking/razorpay-hackathon)
 [![Stack](https://img.shields.io/badge/Stack-React_19_|_TypeScript_|_Vite_|_Tailwind_CSS-06b6d4?style=for-the-badge)](https://vitejs.dev)
+[![CI](https://github.com/RDisCoding/FinOps-Recon-AI/actions/workflows/ci.yml/badge.svg)](https://github.com/RDisCoding/FinOps-Recon-AI/actions/workflows/ci.yml)
 
 ---
 
@@ -126,7 +127,7 @@ Our engine deterministically isolates 5 critical operational error categories ac
 ## 4. Track 04 Feature Breakdown
 
 ### 1. Natural Language "Settlement Q&A Agent"
-Track 04 explicitly targets a **Settlement Q&A Agent**. Our chat assistant operates in an interactive slide-out panel:
+Track 04 explicitly targets a **Settlement Q&A Agent**. With `VITE_GROQ_API_KEY` configured, each question is sent to Groq with the current audit context. Without a key, deterministic local responses keep the demo usable. The chat assistant operates in an interactive slide-out panel:
 - **Preset Prompt Pills**: Judges can test questions with 1 click:
   - *"Why was my payout on Tuesday lower than expected?"*
   - *"Which payment method had the highest rate of tax miscalculations?"*
@@ -139,9 +140,9 @@ Real bank statements are messy CSVs or raw text lines. Our fuzzy parser modal:
 - Extracts UTR, remitter name, credit amount, and date with 98%+ confidence score.
 - Instantly maps extracted lines to `BankStatementCredit[]` and re-runs 3-way reconciliation.
 
-### 3. End-to-End Dispute Action Agent (PDF & Webhook)
+### 3. End-to-End Dispute Action Agent (PDF & Escalation Adapter)
 - **PDF Dispute Packet Generator**: Generates print-ready formal audit packets with letterhead, 3-way line-item tables, and digital signature blocks.
-- **Razorpay Dispute API Webhook Simulation**: Asynchronously POSTs dispute claim payloads to `https://api.razorpay.com/v1/disputes/escalate`, assigning ticket IDs (`RZP-DISP-2026-9823`) and updating status to `ESCALATED_UNDER_REVIEW`.
+- **Escalation adapter**: The browser demo generates the claim packet and local escalation response. Razorpay secret-key APIs must be called from a server-side adapter; this frontend does not claim to create live disputes.
 
 ---
 
@@ -195,11 +196,18 @@ cd razorpay-hackathon
 # 2. Install dependencies
 npm install
 
+# Optional: enable the live Groq Q&A integration
+# Copy .env.example to .env.local and set VITE_GROQ_API_KEY.
+# Do not commit .env.local or expose a production Groq key in a public frontend.
+
 # 3. Launch local development server (Port 3000)
 npm run dev
 
 # 4. Build production bundle (Verification)
 npm run build
+
+# 5. Run unit tests
+npm test
 ```
 
 ---

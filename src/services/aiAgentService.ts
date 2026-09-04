@@ -13,7 +13,7 @@ export interface AgentChatMessage {
   };
 }
 
-export function generateAgentResponse(
+export function generateDeterministicAgentResponse(
   question: string,
   summary: AuditSummary,
   exceptions: ReconciliationException[]
@@ -109,4 +109,81 @@ export function generateAgentResponse(
     timestamp,
     text: `**FinOps AI Reconciliation Assistant Summary:**\n\nI have audited **${summary.total_orders_audited} transaction records** totaling ₹${summary.total_order_value_inr.toLocaleString('en-IN')}.\n\n- **Match Rate:** ${summary.match_rate_percentage}%\n- **Isolated Operational Errors:** ${summary.discrepancy_orders_count} exceptions\n- **Total Actionable Margin Recovered:** ₹${summary.total_leakage_recovered_inr.toLocaleString('en-IN', { minimumFractionDigits: 2 })}\n\nYou can ask me specific questions like:\n- *"Why was my payout on Tuesday ₹14,250 lower than expected?"*\n- *"Which payment method had the highest rate of tax miscalculations?"*\n- *"Explain Order ORD_10015 discrepancy."*`
   };
+}
+
+function buildAuditContext(summary: AuditSummary, exceptions: ReconciliationException[]) {
+  return JSON.stringify({
+    summary,
+    exceptions: exceptions.map(exception => ({
+      id: exception.id,
+      order_id: exception.order_id,
+      error_type: exception.error_type,
+      severity: exception.severity,
+      description: exception.description,
+      expected_value: exception.expected_value,
+      actual_value: exception.actual_value,
+      financial_leakage: exception.financial_leakage,
+      payout_batch_id: exception.payout_batch_id,
+      timestamp: exception.timestamp
+    }))
+  });
+}
+
+export async function generateAgentResponse(
+  question: string,
+  summary: AuditSummary,
+  exceptions: ReconciliationException[]
+): Promise<AgentChatMessage> {
+  const fallback = () => generateDeterministicAgentResponse(question, summary, exceptions);
+  const apiKey = import.meta.env.VITE_GROQ_API_KEY;
+
+  if (!apiKey) return fallback();
+
+  try {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: import.meta.env.VITE_GROQ_MODEL || 'llama-3.3-70b-versatile',
+        temperature: 0.1,
+        max_tokens: 700,
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a precise FinOps reconciliation analyst. Answer only from the supplied audit context. Cite order IDs, exception IDs, batch IDs, and amounts when relevant. Never invent a transaction, UTR, or financial value. If the context does not contain the answer, say so. Use concise Markdown.'
+          },
+          {
+            role: 'user',
+            content: `Question:\n${question}\n\nAudit context:\n${buildAuditContext(summary, exceptions)}`
+          }
+        ]
+      })
+    });
+
+    if (!response.ok) throw new Error(`Groq request failed with status ${response.status}`);
+
+    const data = await response.json() as { choices?: Array<{ message?: { content?: string } }> };
+    const text = data.choices?.[0]?.message?.content?.trim();
+    if (!text) throw new Error('Groq returned an empty response');
+
+    const orderIdMatch = question.match(/ord_\d+/i);
+    const relatedException = orderIdMatch
+      ? exceptions.find(exception => exception.order_id.toUpperCase() === orderIdMatch[0].toUpperCase())
+      : undefined;
+
+    return {
+      id: `msg_${Date.now()}`,
+      sender: 'agent',
+      timestamp: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
+      text,
+      relatedOrderId: relatedException?.order_id,
+      relatedExceptionId: relatedException?.id,
+      actionPayload: relatedException ? { type: 'OPEN_DISPUTE_MODAL', targetId: relatedException.id } : undefined
+    };
+  } catch {
+    return fallback();
+  }
 }
