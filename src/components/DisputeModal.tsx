@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import type { ReconciliationException } from '../types/reconciliation';
-import { generateDisputePDF, contestRazorpayDispute } from '../services/disputeActionService';
-import type { EscalationStatus } from '../services/disputeActionService';
+import { generateDisputePDF, contestRazorpayDispute, listRazorpayDisputes } from '../services/disputeActionService';
+import type { EscalationStatus, RazorpayDispute } from '../services/disputeActionService';
 import { X, Copy, Check, ShieldAlert, IndianRupee, FileText, Download, Send, CheckCircle2 } from 'lucide-react';
 
 interface DisputeModalProps {
@@ -15,6 +15,23 @@ export const DisputeModal: React.FC<DisputeModalProps> = ({ exception, onClose }
   const [escalation, setEscalation] = useState<EscalationStatus | null>(null);
   const [disputeId, setDisputeId] = useState('');
   const [escalationError, setEscalationError] = useState<string | null>(null);
+  const [availableDisputes, setAvailableDisputes] = useState<RazorpayDispute[]>([]);
+  const [isLoadingDisputes, setIsLoadingDisputes] = useState(false);
+  const [disputeListError, setDisputeListError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!exception) return;
+
+    setDisputeId('');
+    setEscalation(null);
+    setEscalationError(null);
+    setIsLoadingDisputes(true);
+    setDisputeListError(null);
+    void listRazorpayDisputes()
+      .then(disputes => setAvailableDisputes(disputes))
+      .catch(error => setDisputeListError(error instanceof Error ? error.message : 'Unable to load Razorpay disputes.'))
+      .finally(() => setIsLoadingDisputes(false));
+  }, [exception]);
 
   if (!exception) return null;
 
@@ -106,6 +123,27 @@ export const DisputeModal: React.FC<DisputeModalProps> = ({ exception, onClose }
             <label className="text-xs font-semibold text-slate-300 block" htmlFor="razorpay-dispute-id">
               Razorpay dispute ID
             </label>
+            {isLoadingDisputes && <p className="text-[10px] text-cyan-400">Loading disputes from Razorpay...</p>}
+            {!isLoadingDisputes && !disputeListError && availableDisputes.length === 0 && (
+              <p className="text-[10px] text-amber-300 bg-amber-950/30 border border-amber-500/30 rounded-lg p-2">
+                No disputes are available in this Razorpay account. A real `disp_...` ID is required to test the contest flow.
+              </p>
+            )}
+            {disputeListError && <p className="text-[10px] text-rose-300">{disputeListError}</p>}
+            {availableDisputes.length > 0 && (
+              <select
+                value={disputeId}
+                onChange={event => setDisputeId(event.target.value)}
+                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-rose-500"
+              >
+                <option value="">Select an available dispute</option>
+                {availableDisputes.map(dispute => (
+                  <option key={dispute.id} value={dispute.id}>
+                    {dispute.id} • {dispute.status} • {(dispute.amount / 100).toFixed(2)} {dispute.currency}
+                  </option>
+                ))}
+              </select>
+            )}
             <input
               id="razorpay-dispute-id"
               value={disputeId}
@@ -113,7 +151,7 @@ export const DisputeModal: React.FC<DisputeModalProps> = ({ exception, onClose }
               placeholder="disp_AHfqOvkldwsbqt"
               className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-rose-500"
             />
-            <p className="text-[10px] text-slate-500">This contests an existing Razorpay dispute in draft mode through the secure server adapter.</p>
+            <p className="text-[10px] text-slate-500">This contests an existing Razorpay dispute in draft mode through the secure server adapter. The list is loaded from Razorpay; you may also enter an ID manually.</p>
           </div>
 
           {escalationError && <p className="text-xs text-rose-300 bg-rose-950/30 border border-rose-500/30 rounded-lg p-3">{escalationError}</p>}
@@ -123,7 +161,7 @@ export const DisputeModal: React.FC<DisputeModalProps> = ({ exception, onClose }
               <div className="flex items-center justify-between">
                 <span className="font-bold text-emerald-400 flex items-center gap-1.5">
                   <CheckCircle2 className="w-4 h-4" />
-                  Razorpay Dispute Contest Submitted
+                  Razorpay Dispute Contest Drafted
                 </span>
                 <span className="font-mono text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded font-bold">
                   {escalation.ticketId}
@@ -173,7 +211,7 @@ export const DisputeModal: React.FC<DisputeModalProps> = ({ exception, onClose }
               className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold bg-rose-600 hover:bg-rose-500 text-white shadow-lg shadow-rose-600/30 transition-all cursor-pointer disabled:opacity-50"
             >
               <Send className={`w-4 h-4 ${isEscalating ? 'animate-spin' : ''}`} />
-              {isEscalating ? 'Contesting Dispute...' : escalation ? 'Dispute Contest Sent' : 'Contest Razorpay Dispute'}
+              {isEscalating ? 'Drafting Contest...' : escalation ? 'Contest Draft Saved' : 'Contest Razorpay Dispute'}
             </button>
           </div>
 

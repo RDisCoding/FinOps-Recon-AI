@@ -7,6 +7,16 @@ export interface EscalationStatus {
   webhookResponse: string;
 }
 
+export interface RazorpayDispute {
+  id: string;
+  payment_id: string;
+  amount: number;
+  currency: string;
+  status: string;
+  phase: string;
+  respond_by?: number;
+}
+
 export function generateDisputePDF(exception: ReconciliationException) {
   // Generate a formatted printable HTML string and open a print preview / download window
   const printWindow = window.open('', '_blank');
@@ -86,6 +96,13 @@ export function generateDisputePDF(exception: ReconciliationException) {
 
   printWindow.document.write(htmlContent);
   printWindow.document.close();
+}
+
+export async function listRazorpayDisputes(): Promise<RazorpayDispute[]> {
+  const response = await fetch('/api/razorpay/disputes');
+  const payload = await response.json() as { error?: string; disputes?: RazorpayDispute[] };
+  if (!response.ok) throw new Error(payload.error || 'Unable to load Razorpay disputes');
+  return payload.disputes || [];
 }
 
 export async function contestRazorpayDispute(
