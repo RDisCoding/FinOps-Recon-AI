@@ -160,6 +160,8 @@ Real bank statements are messy CSVs or raw text lines. Our fuzzy parser modal:
 - Extracts UTR, remitter name, credit amount, and date with a confidence score.
 - Instantly maps extracted lines to `BankStatementCredit[]` and re-runs 3-way reconciliation.
 
+The parser is also tested against the supplied CSV fixture at [`src/services/fixtures/public-bank-statement.csv`](src/services/fixtures/public-bank-statement.csv). Its two rows cover a credit and a debit transaction with separate UTR/reference values, amount, date, and running balance columns. The sample was extracted/provided using [pdf2text.ai](https://pdf2text.ai); this is evidence of handling a real-world-shaped CSV export, not an official endorsement or universal bank-format specification. Scanned PDFs, multi-line narrations, and bank-specific column variations still require additional fixtures or OCR.
+
 ### 3. End-to-End Dispute Action Agent (PDF & Contest Adapter)
 
 - **PDF Dispute Packet Generator**: Generates print-ready formal audit packets with letterhead, 3-way line-item tables, and digital signature blocks.
