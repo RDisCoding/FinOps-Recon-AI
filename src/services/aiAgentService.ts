@@ -1,5 +1,17 @@
 import type { AuditSummary, ReconciliationException } from '../types/reconciliation';
 
+const MAX_QUESTION_LENGTH = 500;
+const GROQ_TIMEOUT_MS = 15000;
+const GROQ_COOLDOWN_MS = 1200;
+let lastGroqRequestAt = 0;
+
+export type AgentResponseMode = 'groq' | 'fallback' | 'rate_limited' | 'unavailable';
+
+export interface AgentResponseResult {
+  message: AgentChatMessage;
+  mode: AgentResponseMode;
+}
+
 export interface AgentChatMessage {
   id: string;
   sender: 'user' | 'agent';
@@ -132,16 +144,32 @@ function buildAuditContext(summary: AuditSummary, exceptions: ReconciliationExce
 export async function generateAgentResponse(
   question: string,
   summary: AuditSummary,
-  exceptions: ReconciliationException[]
-): Promise<AgentChatMessage> {
+  exceptions: ReconciliationException[],
+  signal?: AbortSignal
+): Promise<AgentResponseResult> {
   const fallback = () => generateDeterministicAgentResponse(question, summary, exceptions);
+  const fallbackResult = (mode: AgentResponseMode, text?: string): AgentResponseResult => ({
+    mode,
+    message: text ? { ...fallback(), text } : fallback()
+  });
+  const normalizedQuestion = question.trim().slice(0, MAX_QUESTION_LENGTH);
   const apiKey = import.meta.env.VITE_GROQ_API_KEY;
 
-  if (!apiKey) return fallback();
+  if (!normalizedQuestion) return fallbackResult('fallback');
+  if (!apiKey) return fallbackResult('fallback');
+  if (Date.now() - lastGroqRequestAt < GROQ_COOLDOWN_MS) {
+    return fallbackResult('rate_limited', 'Please wait a moment before sending another question. I can still answer from the local audit rules.');
+  }
+
+  lastGroqRequestAt = Date.now();
+  const timeoutController = new AbortController();
+  const timeoutId = setTimeout(() => timeoutController.abort(), GROQ_TIMEOUT_MS);
+  const requestSignal = signal ? AbortSignal.any([signal, timeoutController.signal]) : timeoutController.signal;
 
   try {
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
+      signal: requestSignal,
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${apiKey}`
@@ -157,33 +185,46 @@ export async function generateAgentResponse(
           },
           {
             role: 'user',
-            content: `Question:\n${question}\n\nAudit context:\n${buildAuditContext(summary, exceptions)}`
+            content: `Question:\n${normalizedQuestion}\n\nAudit context:\n${buildAuditContext(summary, exceptions)}`
           }
         ]
       })
     });
 
-    if (!response.ok) throw new Error(`Groq request failed with status ${response.status}`);
+    if (!response.ok) {
+      if (response.status === 429) return fallbackResult('rate_limited', 'Groq is rate-limiting requests right now. I can still answer using the local audit rules.');
+      if (response.status === 401 || response.status === 403) return fallbackResult('unavailable', 'The Groq key was rejected, so I used the local audit response instead.');
+      return fallbackResult('unavailable');
+    }
 
     const data = await response.json() as { choices?: Array<{ message?: { content?: string } }> };
     const text = data.choices?.[0]?.message?.content?.trim();
-    if (!text) throw new Error('Groq returned an empty response');
+    if (!text) return fallbackResult('unavailable');
 
-    const orderIdMatch = question.match(/ord_\d+/i);
+    const orderIdMatch = normalizedQuestion.match(/ord_\d+/i);
     const relatedException = orderIdMatch
       ? exceptions.find(exception => exception.order_id.toUpperCase() === orderIdMatch[0].toUpperCase())
       : undefined;
 
     return {
-      id: `msg_${Date.now()}`,
-      sender: 'agent',
-      timestamp: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
-      text,
-      relatedOrderId: relatedException?.order_id,
-      relatedExceptionId: relatedException?.id,
-      actionPayload: relatedException ? { type: 'OPEN_DISPUTE_MODAL', targetId: relatedException.id } : undefined
+      mode: 'groq',
+      message: {
+        id: `msg_${Date.now()}`,
+        sender: 'agent',
+        timestamp: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
+        text,
+        relatedOrderId: relatedException?.order_id,
+        relatedExceptionId: relatedException?.id,
+        actionPayload: relatedException ? { type: 'OPEN_DISPUTE_MODAL', targetId: relatedException.id } : undefined
+      }
     };
-  } catch {
-    return fallback();
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      if (signal?.aborted) throw error;
+      return fallbackResult('unavailable', 'Groq took too long to respond. I used the local audit response instead.');
+    }
+    return fallbackResult('unavailable');
+  } finally {
+    clearTimeout(timeoutId);
   }
 }

@@ -69,6 +69,11 @@
 .eyebrow { color: var(--text-muted); font-size: 0.68rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
 .section-title { color: var(--text-primary); font-size: 1.05rem; font-weight: 700; letter-spacing: -0.01em; }
 .tabular-nums { font-variant-numeric: tabular-nums; }
+.agent-markdown p { color: #d5dde7; }
+.agent-markdown strong { color: #ffffff; font-weight: 700; }
+.agent-markdown code { color: #b8d4ff; }
+.agent-markdown ul { color: #c4cfdb; }
+.agent-markdown li::marker { color: #7daef5; }
 
 .health-track {
   position: relative;

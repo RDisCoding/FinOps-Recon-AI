@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import ReactMarkdown from 'react-markdown';
 import type { AuditSummary, ReconciliationException } from '../types/reconciliation';
 import { generateAgentResponse } from '../services/aiAgentService';
 import type { AgentChatMessage } from '../services/aiAgentService';
@@ -31,30 +32,46 @@ export const SettlementQAAgent: React.FC<SettlementQAAgentProps> = ({
       id: 'welcome',
       sender: 'agent',
       timestamp: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
-      text: `Hello! I am your **Autonomous Settlement Q&A Agent**. I have audited all **${summary.total_orders_audited} records** and identified **₹${summary.total_leakage_recovered_inr.toLocaleString('en-IN')}** in recoverable financial leakage across 25 discrepancies.\n\nAsk me any natural language question about your Razorpay settlements, GST tax deductions, MDR fee tiers, or missing bank deposits!`
+      text: `I have reviewed **${summary.total_orders_audited} records** and identified **₹${summary.total_leakage_recovered_inr.toLocaleString('en-IN')}** in potential recovery across ${summary.discrepancy_orders_count} exceptions.\n\nAsk about a payout, order, fee, GST calculation, or bank variance.`
     }
   ]);
 
   const [inputQuery, setInputQuery] = useState('');
   const [isThinking, setIsThinking] = useState(false);
+  const [assistantStatus, setAssistantStatus] = useState<string | null>(null);
+  const requestController = useRef<AbortController | null>(null);
+
+  useEffect(() => () => requestController.current?.abort(), []);
 
   const handleSend = (textToSend?: string) => {
+    if (isThinking) return;
     const query = textToSend || inputQuery;
-    if (!query.trim()) return;
+    const trimmedQuery = query.trim().slice(0, 500);
+    if (!trimmedQuery) return;
+
+    requestController.current?.abort();
+    const controller = new AbortController();
+    requestController.current = controller;
+    setAssistantStatus(null);
 
     const userMsg: AgentChatMessage = {
       id: `msg_${Date.now()}_user`,
       sender: 'user',
-      text: query,
+      text: trimmedQuery,
       timestamp: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
     };
 
-    setMessages(prev => [...prev, userMsg]);
+    setMessages(prev => [...prev.slice(-48), userMsg]);
     setIsThinking(true);
-    void generateAgentResponse(query, summary, exceptions).then(agentResp => {
-      setMessages(prev => [...prev, agentResp]);
+    void generateAgentResponse(trimmedQuery, summary, exceptions, controller.signal).then(result => {
+      setMessages(prev => [...prev.slice(-48), result.message]);
+      if (result.mode === 'rate_limited') setAssistantStatus('Rate limit protection active; local audit answer used.');
+      if (result.mode === 'unavailable') setAssistantStatus('Groq unavailable; local audit answer used.');
+    }).catch(error => {
+      if (error instanceof DOMException && error.name === 'AbortError') return;
+      setAssistantStatus('The request was interrupted; please try again.');
     }).finally(() => setIsThinking(false));
-    if (!textToSend) setInputQuery('');
+    setInputQuery('');
   };
 
   const handleAction = (msg: AgentChatMessage) => {
@@ -84,42 +101,50 @@ export const SettlementQAAgent: React.FC<SettlementQAAgentProps> = ({
 
       {/* Slide-out Drawer Panel */}
       {isOpen && (
-        <div className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-[#111923] border-l border-slate-700 shadow-2xl flex flex-col animate-slide-left">
+        <div className="fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-[#111923] border-l border-slate-700 shadow-2xl flex flex-col animate-slide-left">
           
           {/* Header */}
-          <div className="flex items-center justify-between px-5 py-4 border-b border-slate-700 bg-[#151d28]">
+          <div className="flex items-center justify-between px-6 py-5 border-b border-slate-700 bg-[#151d28]">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-blue-500/10 border border-blue-400/30 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-400/30 flex items-center justify-center">
                 <Bot className="w-5 h-5 text-blue-300" />
               </div>
               <div>
-                <h3 className="font-bold text-white text-sm flex items-center gap-1.5">
+                <h3 className="font-bold text-white text-base flex items-center gap-1.5">
                   Recon Assistant
                 </h3>
-                <p className="text-[11px] text-slate-400">Ask questions about your reconciliation data</p>
+                <p className="text-xs text-slate-400">Investigation support for this reconciliation batch</p>
               </div>
             </div>
 
-            <button
-              onClick={onToggle}
-              className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-all cursor-pointer"
-            >
-              <X className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-3">
+              <span className="hidden sm:inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-300">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                Ready
+              </span>
+              <button
+                onClick={onToggle}
+                aria-label="Close Recon Assistant"
+                className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-all cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
           {/* Suggested Prompts Banner */}
-          <div className="p-3 bg-[#151d28] border-b border-slate-700">
-            <div className="text-[10px] font-semibold uppercase text-slate-400 tracking-wider mb-2 flex items-center gap-1">
+          <div className="px-6 py-4 bg-[#151d28] border-b border-slate-700">
+            <div className="text-[10px] font-semibold uppercase text-slate-400 tracking-wider mb-3 flex items-center gap-1.5">
               <HelpCircle className="w-3 h-3 text-slate-500" />
               Suggested questions
             </div>
-            <div className="flex flex-col gap-1.5">
+            <div className="grid grid-cols-1 gap-2">
               {SUGGESTED_PROMPTS.map((prompt, idx) => (
                 <button
                   key={idx}
                   onClick={() => handleSend(prompt)}
-                  className="text-left text-[11px] px-2.5 py-1.5 rounded-md bg-slate-900/70 hover:bg-slate-800 border border-slate-700/60 text-slate-300 transition-all cursor-pointer truncate"
+                  disabled={isThinking}
+                  className="text-left text-xs px-3 py-2 rounded-lg bg-slate-900/70 hover:bg-slate-800 border border-slate-700/60 text-slate-300 transition-all cursor-pointer truncate disabled:opacity-50"
                 >
                   "{prompt}"
                 </button>
@@ -128,20 +153,37 @@ export const SettlementQAAgent: React.FC<SettlementQAAgentProps> = ({
           </div>
 
           {/* Chat Messages */}
-          <div className="flex-1 p-4 space-y-4 overflow-y-auto">
+          <div className="flex-1 px-6 py-5 space-y-5 overflow-y-auto bg-[#101821]">
             {messages.map(msg => (
               <div
                 key={msg.id}
                 className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}
               >
                 <div
-                  className={`max-w-[85%] p-3.5 rounded-2xl text-xs leading-relaxed ${
+                    className={`max-w-[88%] px-4 py-3.5 rounded-2xl text-sm leading-relaxed ${
                     msg.sender === 'user'
                       ? 'bg-blue-600 text-white rounded-br-none'
                       : 'bg-[#192331] border border-slate-700 text-slate-200 rounded-bl-none'
                   }`}
                 >
-                  <div className="whitespace-pre-wrap">{msg.text}</div>
+                  {msg.sender === 'agent' ? (
+                    <div className="agent-markdown space-y-2">
+                      <ReactMarkdown
+                        components={{
+                          p: ({ children }) => <p>{children}</p>,
+                          strong: ({ children }) => <strong className="font-semibold text-white">{children}</strong>,
+                          em: ({ children }) => <em className="text-slate-300">{children}</em>,
+                          code: ({ children }) => <code className="rounded bg-slate-950 px-1 py-0.5 font-mono text-[11px] text-blue-200">{children}</code>,
+                          ul: ({ children }) => <ul className="list-disc space-y-1 pl-4">{children}</ul>,
+                          li: ({ children }) => <li>{children}</li>
+                        }}
+                      >
+                        {msg.text}
+                      </ReactMarkdown>
+                    </div>
+                  ) : (
+                    <div className="whitespace-pre-wrap">{msg.text}</div>
+                  )}
 
                   {/* Action Link Button */}
                   {msg.actionPayload && (
@@ -160,7 +202,7 @@ export const SettlementQAAgent: React.FC<SettlementQAAgentProps> = ({
           </div>
 
           {/* Input Bar */}
-          <div className="p-4 border-t border-slate-700 bg-[#151d28]">
+          <div className="px-6 py-4 border-t border-slate-700 bg-[#151d28]">
             <form
               onSubmit={e => {
                 e.preventDefault();
@@ -174,17 +216,20 @@ export const SettlementQAAgent: React.FC<SettlementQAAgentProps> = ({
                 value={inputQuery}
                 onChange={e => setInputQuery(e.target.value)}
                 disabled={isThinking}
-                className="flex-1 bg-slate-950 border border-slate-700 rounded-md px-4 py-2.5 text-xs text-white focus:outline-none focus:border-blue-400 transition-all disabled:opacity-60"
+                maxLength={500}
+                className="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-400 transition-all disabled:opacity-60"
               />
               <button
                 type="submit"
                 disabled={isThinking}
-                className="w-10 h-10 rounded-md bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center transition-all cursor-pointer"
+                aria-label="Send question"
+                className="w-11 h-11 rounded-lg bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center transition-all cursor-pointer disabled:opacity-50"
               >
                 <Send className="w-4 h-4" />
               </button>
             </form>
             {isThinking && <p className="mt-2 text-[10px] text-cyan-400">Analyzing the current audit context...</p>}
+            {assistantStatus && <p className="mt-2 text-[10px] text-amber-300">{assistantStatus}</p>}
           </div>
 
         </div>
