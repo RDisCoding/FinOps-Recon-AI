@@ -66,16 +66,16 @@ export const AuditRunnerControls: React.FC<AuditRunnerControlsProps> = ({
   };
 
   return (
-    <div className="glass-card rounded-2xl p-5 mb-6">
+    <div className="glass-card rounded-xl p-4 mb-6">
       <div className="flex flex-col md:flex-row items-center justify-between gap-4">
         
         <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
-          <div className="flex items-center gap-2 text-xs text-slate-300">
-            <Sliders className="w-4 h-4 text-indigo-400" />
-            <span className="font-semibold text-slate-200">Synthetic Batch Config:</span>
+          <div className="flex items-center gap-2 text-xs text-slate-300 min-w-36">
+            <Sliders className="w-4 h-4 text-slate-500" />
+            <div><p className="eyebrow">Demo dataset</p><span className="text-slate-400">Test scenario</span></div>
           </div>
 
-          <div className="flex items-center gap-1 bg-slate-900/90 p-1 rounded-lg border border-slate-800 text-xs">
+          <div className="flex items-center gap-1 bg-slate-900/70 p-1 rounded-md border border-slate-700/70 text-xs">
             {[100, 500, 1000].map(count => (
               <button
                 key={count}
@@ -85,7 +85,7 @@ export const AuditRunnerControls: React.FC<AuditRunnerControlsProps> = ({
                 }}
                 className={`px-3 py-1.5 rounded-md font-medium transition-all ${
                   recordCount === count
-                    ? 'bg-indigo-600 text-white shadow-sm'
+                    ? 'bg-slate-600 text-white'
                     : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
@@ -100,10 +100,10 @@ export const AuditRunnerControls: React.FC<AuditRunnerControlsProps> = ({
               setInjectErrors(next);
               onRunAudit(recordCount, next);
             }}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all cursor-pointer ${
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-md border text-xs font-semibold transition-all cursor-pointer ${
               injectErrors
-                ? 'bg-amber-500/10 border-amber-500/30 text-amber-300 hover:bg-amber-500/20'
-                : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/20'
+                ? 'bg-amber-500/10 border-amber-500/30 text-amber-300 hover:bg-amber-500/15'
+                : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/15'
             }`}
           >
             {injectErrors ? (
@@ -123,7 +123,7 @@ export const AuditRunnerControls: React.FC<AuditRunnerControlsProps> = ({
         <div className="flex items-center gap-3 w-full md:w-auto justify-end">
           <button
             onClick={() => onRunAudit(recordCount, injectErrors)}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-all"
+            className="flex items-center gap-2 px-4 py-2 rounded-md text-xs font-semibold bg-transparent hover:bg-slate-800 text-slate-300 border border-slate-700 transition-all"
           >
             <Play className="w-3.5 h-3.5 text-cyan-400" />
             Re-Audit Current Batch
@@ -131,7 +131,7 @@ export const AuditRunnerControls: React.FC<AuditRunnerControlsProps> = ({
 
           <button
             onClick={handleExportCSV}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/20 transition-all"
+            className="flex items-center gap-2 px-4 py-2 rounded-md text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white transition-all"
           >
             <Download className="w-3.5 h-3.5" />
             Export Audit Ledger (CSV)

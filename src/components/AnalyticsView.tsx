@@ -16,21 +16,21 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ summary }) => {
     leakage: val.leakage_inr
   }));
 
-  const COLORS = ['#f59e0b', '#f43f5e', '#a855f7', '#ef4444', '#06b6d4'];
+  const COLORS = ['#d69e2e', '#d97777', '#8aa4c2', '#c46d6d', '#6da5a8'];
 
   const formatCurrency = (val: number) => `₹${val.toLocaleString('en-IN')}`;
 
   return (
     <div className="space-y-6 mb-6">
       
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         
-        <div className="glass-card rounded-2xl p-6">
+        <div className="glass-card rounded-xl p-5">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-base font-bold text-white flex items-center gap-2">
                 <BarChart3 className="w-4 h-4 text-indigo-400" />
-                Financial Leakage by Error Category (₹)
+                Financial impact by category
               </h3>
               <p className="text-xs text-slate-400">Total ₹ amount lost per operational discrepancy class</p>
             </div>
@@ -38,7 +38,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ summary }) => {
 
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={errorData} margin={{ top: 10, right: 10, left: 10, bottom: 20 }}>
+                <BarChart data={errorData} margin={{ top: 10, right: 10, left: 10, bottom: 20 }}>
                 <XAxis 
                   dataKey="name" 
                   stroke="#94a3b8" 
@@ -49,7 +49,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ summary }) => {
                 <YAxis stroke="#94a3b8" fontSize={10} tickFormatter={(val) => `₹${val}`} />
                 <Tooltip 
                   formatter={(value: any) => [`₹${Number(value).toFixed(2)}`, 'Financial Loss']}
-                  contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px', color: '#fff' }}
+                  contentStyle={{ backgroundColor: '#192331', borderColor: '#3a4a5d', borderRadius: '6px', color: '#fff' }}
                 />
                 <Bar dataKey="leakage" radius={[6, 6, 0, 0]}>
                   {errorData.map((_, index) => (
@@ -61,12 +61,12 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ summary }) => {
           </div>
         </div>
 
-        <div className="glass-card rounded-2xl p-6">
+        <div className="glass-card rounded-xl p-5">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-base font-bold text-white flex items-center gap-2">
                 <PieIcon className="w-4 h-4 text-cyan-400" />
-                Discrepancy Frequency Distribution
+                Exception frequency
               </h3>
               <p className="text-xs text-slate-400">Share of total 25 operational errors detected</p>
             </div>
@@ -90,7 +90,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ summary }) => {
                 </Pie>
                 <Tooltip 
                   formatter={(val: any) => [`${val} cases`, 'Occurrences']}
-                  contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px', color: '#fff' }}
+                  contentStyle={{ backgroundColor: '#192331', borderColor: '#3a4a5d', borderRadius: '6px', color: '#fff' }}
                 />
               </PieChart>
             </ResponsiveContainer>
@@ -108,12 +108,12 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ summary }) => {
 
       </div>
 
-      <div className="glass-card rounded-2xl p-6">
+      <div className="glass-card rounded-xl p-5">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="text-base font-bold text-white flex items-center gap-2">
               <Building2 className="w-4 h-4 text-emerald-400" />
-              Bank Payout Batch Triangulation Ledger
+              Bank payout ledger
             </h3>
             <p className="text-xs text-slate-400">
               Matching Razorpay bulk NEFT settlement batch transfers against actual Bank statement deposits.
@@ -121,9 +121,9 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ summary }) => {
           </div>
         </div>
 
-        <div className="overflow-x-auto rounded-xl border border-slate-800">
+        <div className="overflow-x-auto rounded-lg border border-slate-700">
           <table className="w-full text-left text-xs text-slate-300">
-            <thead className="bg-slate-900/90 text-slate-400 font-semibold border-b border-slate-800 uppercase tracking-wider text-[11px]">
+            <thead className="bg-slate-900/80 text-slate-500 font-semibold border-b border-slate-700 uppercase tracking-wider text-[10px]">
               <tr>
                 <th className="py-3 px-4">Payout Batch ID</th>
                 <th className="py-3 px-4">Order Count</th>

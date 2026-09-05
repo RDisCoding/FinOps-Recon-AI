@@ -60,15 +60,15 @@ export const ReconciliationDataGrid: React.FC<ReconciliationDataGridProps> = ({
   };
 
   return (
-    <div className="glass-card rounded-2xl p-6 mb-6">
+    <div className="glass-card rounded-xl p-5 mb-6">
       
       <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-6">
         <div>
           <h2 className="text-lg font-bold text-white flex items-center gap-2">
-            3-Way Financial Triangulation Data Grid
+            Transactions
           </h2>
           <p className="text-xs text-slate-400">
-            Real-time line item comparison across Merchant DB, Razorpay API Logs, and Bank Payouts.
+            Compare merchant records, Razorpay settlements, and bank payouts in one workspace.
           </p>
         </div>
 
@@ -80,12 +80,12 @@ export const ReconciliationDataGrid: React.FC<ReconciliationDataGridProps> = ({
               placeholder="Search Order ID, Customer..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              className="w-full bg-slate-900/90 border border-slate-800 rounded-xl pl-9 pr-4 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 transition-all"
+              className="w-full bg-slate-900/70 border border-slate-700 rounded-md pl-9 pr-4 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-400 transition-all"
             />
           </div>
 
-          <div className="flex items-center gap-1.5 bg-slate-900/90 border border-slate-800 rounded-xl px-3 py-1.5 text-xs">
-            <Filter className="w-3.5 h-3.5 text-indigo-400" />
+          <div className="flex items-center gap-1.5 bg-slate-900/70 border border-slate-700 rounded-md px-3 py-2 text-xs">
+            <Filter className="w-3.5 h-3.5 text-slate-500" />
             <select
               value={filterType}
               onChange={e => setFilterType(e.target.value)}
@@ -106,14 +106,14 @@ export const ReconciliationDataGrid: React.FC<ReconciliationDataGridProps> = ({
 
       <div className="overflow-x-auto rounded-xl border border-slate-800">
         <table className="w-full text-left text-xs text-slate-300">
-          <thead className="bg-slate-900/90 text-slate-400 font-semibold border-b border-slate-800 uppercase tracking-wider text-[11px]">
+          <thead className="bg-slate-900/80 text-slate-500 font-semibold border-b border-slate-700 uppercase tracking-wider text-[10px]">
             <tr>
-              <th className="py-3 px-4">Status & Order ID</th>
+              <th className="py-3 px-4">Status / Order</th>
               <th className="py-3 px-4">Customer & Method</th>
-              <th className="py-3 px-4">1. Merchant DB Value</th>
-              <th className="py-3 px-4">2. Razorpay Log Fee & GST</th>
-              <th className="py-3 px-4">3. Net Settlement</th>
-              <th className="py-3 px-4">Bank Batch UTR</th>
+              <th className="py-3 px-4 text-right">Merchant amount</th>
+              <th className="py-3 px-4 text-right">Razorpay settlement</th>
+              <th className="py-3 px-4 text-right">Net payout</th>
+              <th className="py-3 px-4">Bank verification</th>
               <th className="py-3 px-4 text-right">Actions</th>
             </tr>
           </thead>
@@ -127,8 +127,8 @@ export const ReconciliationDataGrid: React.FC<ReconciliationDataGridProps> = ({
               return (
                 <tr
                   key={ord.order_id}
-                  className={`hover:bg-slate-900/60 transition-colors ${
-                    isDiscrepancy ? 'bg-rose-950/10' : ''
+                  className={`hover:bg-slate-800/40 transition-colors ${
+                    isDiscrepancy ? 'bg-rose-950/10 border-l-2 border-l-rose-400/60' : ''
                   }`}
                 >
                   <td className="py-3 px-4">
@@ -139,14 +139,14 @@ export const ReconciliationDataGrid: React.FC<ReconciliationDataGridProps> = ({
                         <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
                       )}
                       <div>
-                        <div className="font-mono font-bold text-white">{ord.order_id}</div>
+                        <div className="font-mono font-semibold text-slate-100">{ord.order_id}</div>
                         <div className="flex items-center gap-1 mt-0.5">
                           {statusInfo?.errors.map(err => (
                             <React.Fragment key={err}>{getErrorBadge(err)}</React.Fragment>
                           ))}
                           {!isDiscrepancy && (
-                            <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                              Matched 100%
+                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-300">
+                              <CheckCircle2 className="w-3 h-3" /> Matched
                             </span>
                           )}
                         </div>
@@ -154,7 +154,7 @@ export const ReconciliationDataGrid: React.FC<ReconciliationDataGridProps> = ({
                     </div>
                   </td>
 
-                  <td className="py-3 px-4">
+                  <td className="py-3 px-4 text-right">
                     <div className="font-medium text-slate-200">{ord.customer_name}</div>
                     <div className="text-[11px] text-slate-400 font-mono flex items-center gap-1">
                       <span>{ord.payment_method}</span>
@@ -165,17 +165,17 @@ export const ReconciliationDataGrid: React.FC<ReconciliationDataGridProps> = ({
                   </td>
 
                   <td className="py-3 px-4">
-                    <div className="font-semibold text-slate-100">₹{ord.gross_amount.toFixed(2)}</div>
+                    <div className="font-semibold text-slate-100 tabular-nums">₹{ord.gross_amount.toFixed(2)}</div>
                     <div className="text-[11px] text-slate-400">
                       Agreed MDR: <span className="text-slate-200">{(ord.agreed_mdr_rate * 100).toFixed(1)}%</span>
                     </div>
                   </td>
 
-                  <td className="py-3 px-4">
+                  <td className="py-3 px-4 text-right">
                     {log ? (
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="text-slate-300">MDR: ₹{log.mdr_fee_amount.toFixed(2)}</span>
+                          <span className="text-slate-300 tabular-nums">MDR: ₹{log.mdr_fee_amount.toFixed(2)}</span>
                           <span className="text-slate-500">({(log.mdr_fee_rate_charged * 100).toFixed(1)}%)</span>
                         </div>
                         <div className={`text-[11px] ${log.injected_error_type === 'GST_MISCALCULATION' ? 'text-rose-400 font-bold' : 'text-slate-400'}`}>
@@ -187,10 +187,10 @@ export const ReconciliationDataGrid: React.FC<ReconciliationDataGridProps> = ({
                     )}
                   </td>
 
-                  <td className="py-3 px-4">
+                  <td className="py-3 px-4 text-right">
                     {log ? (
                       <div>
-                        <div className="font-bold text-emerald-400">₹{log.net_settlement_amount.toFixed(2)}</div>
+                        <div className="font-semibold text-emerald-300 tabular-nums">₹{log.net_settlement_amount.toFixed(2)}</div>
                         {log.deducted_promo_amount > 0 && (
                           <div className="text-[10px] text-cyan-400">Promo Ded: ₹{log.deducted_promo_amount}</div>
                         )}
@@ -208,9 +208,9 @@ export const ReconciliationDataGrid: React.FC<ReconciliationDataGridProps> = ({
                       <div>
                         <div className="text-slate-300 font-medium">{log.payout_batch_id}</div>
                         {log.injected_error_type === 'GHOST_PAYOUT' ? (
-                          <span className="text-rose-400 font-bold">Missing Bank Credit!</span>
+                          <span className="text-rose-300 font-semibold">Missing bank credit</span>
                         ) : (
-                          <span className="text-emerald-400/80">Bank Verified</span>
+                          <span className="text-emerald-300">Bank verified</span>
                         )}
                       </div>
                     ) : (

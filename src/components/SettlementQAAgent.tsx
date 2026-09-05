@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import type { AuditSummary, ReconciliationException } from '../types/reconciliation';
 import { generateAgentResponse } from '../services/aiAgentService';
 import type { AgentChatMessage } from '../services/aiAgentService';
-import { Bot, Send, X, Sparkles, HelpCircle, ChevronRight } from 'lucide-react';
+import { Bot, Send, X, HelpCircle, ChevronRight } from 'lucide-react';
 
 interface SettlementQAAgentProps {
   summary: AuditSummary;
@@ -72,33 +72,31 @@ export const SettlementQAAgent: React.FC<SettlementQAAgentProps> = ({
       {!isOpen && (
         <button
           onClick={onToggle}
-          className="fixed bottom-6 right-6 z-40 flex items-center gap-2.5 px-4 py-3 rounded-full bg-gradient-to-r from-indigo-600 via-purple-600 to-cyan-600 text-white font-semibold text-xs shadow-2xl hover:scale-105 transition-all glow-indigo cursor-pointer border border-white/20"
+          className="fixed bottom-6 right-6 z-40 flex items-center gap-2.5 px-4 py-3 rounded-lg bg-blue-600 text-white font-semibold text-xs shadow-lg shadow-black/20 hover:bg-blue-500 transition-all cursor-pointer border border-blue-400/30"
         >
-          <Bot className="w-5 h-5 animate-bounce" />
-          <span>Ask Settlement Q&A Agent</span>
+          <Bot className="w-4 h-4" />
+          <span>Ask Recon Assistant</span>
           <span className="flex h-2 w-2 relative">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-400"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-200"></span>
           </span>
         </button>
       )}
 
       {/* Slide-out Drawer Panel */}
       {isOpen && (
-        <div className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-[#0f172a] border-l border-slate-800 shadow-2xl flex flex-col animate-slide-left">
+        <div className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-[#111923] border-l border-slate-700 shadow-2xl flex flex-col animate-slide-left">
           
           {/* Header */}
-          <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800 bg-slate-900/90">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-slate-700 bg-[#151d28]">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center shadow-md">
-                <Bot className="w-5 h-5 text-white" />
+              <div className="w-9 h-9 rounded-lg bg-blue-500/10 border border-blue-400/30 flex items-center justify-center">
+                <Bot className="w-5 h-5 text-blue-300" />
               </div>
               <div>
                 <h3 className="font-bold text-white text-sm flex items-center gap-1.5">
-                  Settlement Q&A Agent
-                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                  Recon Assistant
                 </h3>
-                <p className="text-[11px] text-slate-400">Track 04 LLM Natural Language Assistant</p>
+                <p className="text-[11px] text-slate-400">Ask questions about your reconciliation data</p>
               </div>
             </div>
 
@@ -111,17 +109,17 @@ export const SettlementQAAgent: React.FC<SettlementQAAgentProps> = ({
           </div>
 
           {/* Suggested Prompts Banner */}
-          <div className="p-3 bg-slate-900/50 border-b border-slate-800">
+          <div className="p-3 bg-[#151d28] border-b border-slate-700">
             <div className="text-[10px] font-semibold uppercase text-slate-400 tracking-wider mb-2 flex items-center gap-1">
-              <HelpCircle className="w-3 h-3 text-cyan-400" />
-              Suggested Judge Demo Questions:
+              <HelpCircle className="w-3 h-3 text-slate-500" />
+              Suggested questions
             </div>
             <div className="flex flex-col gap-1.5">
               {SUGGESTED_PROMPTS.map((prompt, idx) => (
                 <button
                   key={idx}
                   onClick={() => handleSend(prompt)}
-                  className="text-left text-[11px] px-2.5 py-1.5 rounded-lg bg-slate-800/80 hover:bg-indigo-600/30 hover:border-indigo-500/40 border border-slate-700/60 text-slate-300 transition-all cursor-pointer truncate"
+                  className="text-left text-[11px] px-2.5 py-1.5 rounded-md bg-slate-900/70 hover:bg-slate-800 border border-slate-700/60 text-slate-300 transition-all cursor-pointer truncate"
                 >
                   "{prompt}"
                 </button>
@@ -139,8 +137,8 @@ export const SettlementQAAgent: React.FC<SettlementQAAgentProps> = ({
                 <div
                   className={`max-w-[85%] p-3.5 rounded-2xl text-xs leading-relaxed ${
                     msg.sender === 'user'
-                      ? 'bg-indigo-600 text-white rounded-br-none'
-                      : 'bg-slate-900 border border-slate-800 text-slate-200 rounded-bl-none shadow-md'
+                      ? 'bg-blue-600 text-white rounded-br-none'
+                      : 'bg-[#192331] border border-slate-700 text-slate-200 rounded-bl-none'
                   }`}
                 >
                   <div className="whitespace-pre-wrap">{msg.text}</div>
@@ -162,7 +160,7 @@ export const SettlementQAAgent: React.FC<SettlementQAAgentProps> = ({
           </div>
 
           {/* Input Bar */}
-          <div className="p-4 border-t border-slate-800 bg-slate-900/80">
+          <div className="p-4 border-t border-slate-700 bg-[#151d28]">
             <form
               onSubmit={e => {
                 e.preventDefault();
@@ -176,12 +174,12 @@ export const SettlementQAAgent: React.FC<SettlementQAAgentProps> = ({
                 value={inputQuery}
                 onChange={e => setInputQuery(e.target.value)}
                 disabled={isThinking}
-                className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500 transition-all disabled:opacity-60"
+                className="flex-1 bg-slate-950 border border-slate-700 rounded-md px-4 py-2.5 text-xs text-white focus:outline-none focus:border-blue-400 transition-all disabled:opacity-60"
               />
               <button
                 type="submit"
                 disabled={isThinking}
-                className="w-10 h-10 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white flex items-center justify-center shadow-md transition-all cursor-pointer"
+                className="w-10 h-10 rounded-md bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center transition-all cursor-pointer"
               >
                 <Send className="w-4 h-4" />
               </button>

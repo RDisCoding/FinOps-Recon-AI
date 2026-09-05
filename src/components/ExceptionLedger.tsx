@@ -37,27 +37,27 @@ export const ExceptionLedger: React.FC<ExceptionLedgerProps> = ({
   };
 
   return (
-    <div className="glass-card rounded-2xl p-6 mb-6">
+    <div className="glass-card rounded-xl p-5 mb-6">
       
       <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-6">
         <div>
           <h2 className="text-lg font-bold text-white flex items-center gap-2">
-            <ShieldAlert className="w-5 h-5 text-rose-400" />
-            AI Discrepancy Exception Ledger
+            <ShieldAlert className="w-5 h-5 text-rose-300" />
+            Exception queue
           </h2>
           <p className="text-xs text-slate-400">
-            Granular audit trace isolating root causes and exact financial leakages across the 25 operational errors.
+            Review root causes, affected orders, and potential recovery.
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-1.5 bg-slate-900/90 p-1 rounded-xl border border-slate-800 text-xs">
+        <div className="flex flex-wrap gap-1.5 bg-slate-900/70 p-1 rounded-md border border-slate-700 text-xs">
           {['ALL', 'MDR_OVERCHARGE', 'GST_MISCALCULATION', 'GHOST_PAYOUT', 'DOUBLE_REFUND', 'PROMO_MISALLOCATION'].map(type => (
             <button
               key={type}
               onClick={() => setSelectedType(type)}
               className={`px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer ${
                 selectedType === type
-                  ? 'bg-indigo-600 text-white shadow-sm'
+                  ? 'bg-slate-600 text-white'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
@@ -77,13 +77,13 @@ export const ExceptionLedger: React.FC<ExceptionLedgerProps> = ({
             <div
               key={ex.id}
               onClick={() => onSelectException(ex)}
-              className="p-4 rounded-xl bg-slate-900/60 hover:bg-slate-900 border border-slate-800/80 hover:border-indigo-500/40 transition-all cursor-pointer group"
+              className="p-4 rounded-lg bg-slate-900/50 hover:bg-slate-800/60 border border-slate-700/70 hover:border-slate-500 transition-all cursor-pointer group"
             >
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
                 
                 <div className="flex items-start gap-3">
                   <div className="mt-1">
-                    <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase border ${getErrorTypeColor(ex.error_type)}`}>
+                    <span className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase border ${getErrorTypeColor(ex.error_type)}`}>
                       {ex.error_type.replace('_', ' ')}
                     </span>
                   </div>
@@ -106,8 +106,8 @@ export const ExceptionLedger: React.FC<ExceptionLedgerProps> = ({
 
                 <div className="flex items-center justify-between md:justify-end gap-4 border-t md:border-t-0 border-slate-800/80 pt-3 md:pt-0">
                   <div className="text-right">
-                    <div className="text-[10px] text-amber-400 font-semibold uppercase tracking-wider">Financial Loss</div>
-                    <div className="text-lg font-black text-rose-400 flex items-center justify-end">
+                    <div className="eyebrow text-amber-300">Potential recovery</div>
+                    <div className="text-lg font-bold text-rose-300 flex items-center justify-end tabular-nums">
                       <IndianRupee className="w-4 h-4" />
                       {ex.financial_leakage.toFixed(2)}
                     </div>
@@ -115,7 +115,7 @@ export const ExceptionLedger: React.FC<ExceptionLedgerProps> = ({
 
                   <button
                     onClick={(e) => handleCopyTicket(ex, e)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 transition-all cursor-pointer"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold bg-transparent hover:bg-slate-800 text-slate-300 border border-slate-700 transition-all cursor-pointer"
                     title="Copy Razorpay Merchant Support Dispute Ticket"
                   >
                     {copiedId === ex.id ? (
