@@ -147,7 +147,7 @@ export async function generateAgentResponse(
         Authorization: `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: import.meta.env.VITE_GROQ_MODEL || 'llama-3.3-70b-versatile',
+        model: import.meta.env.VITE_GROQ_MODEL || 'qwen/qwen3.8-27b',
         temperature: 0.1,
         max_tokens: 700,
         messages: [
