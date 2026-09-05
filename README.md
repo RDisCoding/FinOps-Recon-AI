@@ -11,41 +11,43 @@
 
 ---
 
-> ### **🏆 Key Submission Benchmark Metric**
+> ### **Key Submission Benchmark Metric**
 >
 > **Audited 500 chaotic transaction records totaling ₹40,24,178. Achieved a 95.0% match rate, isolated 100% of the 25 injected fee/GST discrepancies without a single false positive (100% Precision & 100% Recall) in 1.1 ms, and recovered ₹1,06,472 in leaked merchant margin.**
 
 ---
 
-## Product Walkthrough
+## System Screenshots & Interface Overview
 
-### 1. Reconciliation Overview
+### 1. Executive FinOps Dashboard & 3-Way Data Grid
 
-The first viewport establishes the operational story immediately: potential recovery, match rate, open exceptions, the Merchant -> Razorpay -> Bank flow, and the transaction workspace.
-
-![FinOps Recon reconciliation overview](docs/images/executive_overview.png)
-
----
-
-### 2. Transactions and Recon Assistant
-
-The transactions view keeps search, filters, reconciliation status, aligned financial values, and exception actions visible. The Recon Assistant opens as a focused investigation drawer when needed.
-
-![FinOps Recon transactions and assistant](docs/images/qa_agent.png)
+Real-time line-item triangulation comparing storefront orders, Razorpay log fees, net payouts, and bank batch deposits.
+![Executive Dashboard](docs/images/executive_overview.png)
 
 ---
 
-### 3. Bank Statement Ingestion
+### 2. Natural Language "Settlement Q&A Agent"
 
-Import messy bank narration or CSV content, normalize settlement records, and re-run the reconciliation against the updated bank ledger.
+Interactive AI sidekick analyzing audited batch context to answer natural language queries with exact line-item math and UTR citations.
+![Settlement Q&A Agent](docs/images/qa_agent.png)
 
+---
+
+### 3. Fuzzy Unstructured Bank Statement Parser
+
+Fuzzy AI ingestion modal converting raw, messy bank narration strings and CSVs into normalized settlement records.
 ![Unstructured Bank Ingestion](docs/images/bank_ingestion.png)
 
 ---
 
-### 4. Dispute Evidence and Razorpay Contest Adapter
+### 4. Dispute Evidence Packet & Razorpay Contest Adapter
 
-Generate a printable dispute packet, then optionally contest an existing Razorpay dispute through the official server-side API adapter. Razorpay disputes originate from a customer or issuing bank; this application does not create new disputes. The public demo account currently has no Test Mode disputes, so this flow is documented rather than represented with a fabricated success screenshot.
+Generate a printable dispute packet, then optionally contest an existing Razorpay dispute through the official server-side API adapter. Razorpay disputes originate from a customer or issuing bank; this application does not create new disputes.
+
+<p flex align="center">
+  <img src="docs/images/dispute_modal.png" width="49%" alt="Dispute Claim Modal" />
+  <img src="docs/images/webhook_escalation.png" width="49%" alt="Razorpay contest response" />
+</p>
 
 ---
 
@@ -139,16 +141,15 @@ Our engine deterministically isolates 5 critical operational error categories ac
 
 ## 4. Track 04 Feature Breakdown
 
-### 1. Recon Assistant
+### 1. Natural Language "Settlement Q&A Agent"
 
-The **Recon Assistant** is a focused investigation drawer for the current reconciliation batch. With `VITE_GROQ_API_KEY` configured, each question is sent to Groq with the current audit context. Without a key, deterministic local responses keep the demo usable.
+Track 04 explicitly targets a **Settlement Q&A Agent**. With `VITE_GROQ_API_KEY` configured, each question is sent to Groq with the current audit context. Without a key, deterministic local responses keep the demo usable. The chat assistant operates in an interactive slide-out panel:
 
 - **Preset Prompt Pills**: Judges can test questions with 1 click:
   - _"Why was my payout on Tuesday lower than expected?"_
   - _"Which payment method had the highest rate of tax miscalculations?"_
   - _"Explain Order ORD_10015 GST calculation error."_
 - **Line-Item Math & UTR Citations**: Responds in natural English explaining exact order IDs, UTR reference numbers, and mathematical variances.
-- **Model behavior**: With `VITE_GROQ_API_KEY` configured, questions are sent to Groq with the current audit context. Without a key, the app uses a deterministic local fallback so the demo remains usable.
 
 ### 2. Fuzzy Unstructured Bank Statement Parser
 
@@ -171,9 +172,9 @@ The parser is also tested against the supplied CSV fixture at [`src/services/fix
 ## 5. Project Architecture & File Directory
 
 ```
-d:\razorpay-hackathon\
+FinOps-Recon-AI/
 ├── docs/
-│   └── images/                     # Product walkthrough screenshots
+│   └── images/                     # System screenshots (Dashboard, Q&A, Parser, Dispute Modal)
 ├── src/
 │   ├── components/                 # UI React Components
 │   │   ├── AnalyticsView.tsx        # Recharts leakage distribution & bank UTR ledger
@@ -195,7 +196,7 @@ d:\razorpay-hackathon\
 │   │   └── reconciliation.ts        # TypeScript interfaces for 3-way data schemas
 │   ├── App.tsx                      # Main application container
 │   ├── main.tsx                     # Vite entry point
-│   └── index.css                    # Enterprise dark-theme design tokens and Tailwind styles
+│   └── index.css                    # Design system tokens, glassmorphism & Tailwind styles
 ├── api/
 │   └── razorpay/
 │       ├── disputes.ts              # Server-side dispute listing adapter
@@ -263,7 +264,7 @@ RAZORPAY_KEY_SECRET=...
 
 1. Open the [live demo](https://finops-recon-ai.vercel.app/).
 2. Review the executive metrics and switch between the data grid, exception ledger, and analytics tabs.
-3. Open the Recon Assistant and try a suggested prompt. A deployed build without `VITE_GROQ_API_KEY` uses the deterministic fallback.
+3. Open the Settlement Q&A Agent and try a suggested prompt. A deployed build without `VITE_GROQ_API_KEY` uses the deterministic fallback.
 4. Open an exception and download its dispute packet.
 5. Test the Razorpay contest action only when you have a real Test Mode `disp_...` ID belonging to the configured Razorpay account. The current Test Mode account has no disputes, so this path is not demonstrated in the public deployment.
 
@@ -283,6 +284,18 @@ RAZORPAY_KEY_SECRET=...
 | **CI**               | Every push checked | GitHub Actions workflow        | ✅ PASS     |
 
 These benchmark figures are measured against the deterministic synthetic dataset generated by the application. They demonstrate rule-engine behavior and are not a claim about performance or detection accuracy on production merchant data.
+
+---
+
+## 8. Known Limitations & What's Left
+
+This is a working prototype with a real deployment, real tests, and a real (if narrow) Razorpay integration — not a production system. What's left, honestly:
+
+- **Validation data is synthetic.** The benchmark numbers are measured against the app's own generated dataset (see the note under Section 7), not real merchant data.
+- **The Razorpay contest flow is intentionally partial.** Dispute listing now works end-to-end against the real sandbox API, including a clear "no disputes available" state — but contesting still only reaches `action: draft`. Evidence-document upload and the `action: submit` step are deferred to a later phase.
+- **Adapter test coverage is next, not done.** The 7 passing tests cover the audit engine's core rules; the dispute listing and contest adapters don't have dedicated mocked tests yet.
+
+None of this blocks the demo from being a fair showcase of the core idea — the 3-way reconciliation logic, the five audit rules, live dispute listing, and the Groq-backed Q&A are all real and working. The near-term plan is mocked adapter tests, then evidence upload and `submit`, in that order.
 
 ---
 
