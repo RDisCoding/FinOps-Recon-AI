@@ -72,10 +72,10 @@ export const SettlementQAAgent: React.FC<SettlementQAAgentProps> = ({
       {!isOpen && (
         <button
           onClick={onToggle}
-          className="fixed bottom-6 right-6 z-40 flex items-center gap-2.5 px-4 py-3 rounded-lg bg-blue-600 text-white font-semibold text-xs shadow-lg shadow-black/20 hover:bg-blue-500 transition-all cursor-pointer border border-blue-400/30"
+          className="fixed bottom-4 right-4 z-40 flex items-center gap-2 px-3 py-2 rounded-md bg-[#192331] text-slate-200 font-semibold text-xs shadow-lg shadow-black/20 hover:bg-slate-700 transition-all cursor-pointer border border-slate-600"
         >
           <Bot className="w-4 h-4" />
-          <span>Ask Recon Assistant</span>
+          <span>Recon Assistant</span>
           <span className="flex h-2 w-2 relative">
             <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-200"></span>
           </span>

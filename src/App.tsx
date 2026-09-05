@@ -14,7 +14,6 @@ import { runReconciliationAudit } from './services/auditEngine';
 import type { SyntheticDataset, AuditSummary, ReconciliationException, ErrorType, BankStatementCredit } from './types/reconciliation';
 
 import { LayoutGrid, ShieldAlert, BarChart2, ArrowRight, CheckCircle2, AlertTriangle, Landmark } from 'lucide-react';
-import confetti from 'canvas-confetti';
 
 export function App() {
   const [recordCount, setRecordCount] = useState<number>(500);
@@ -47,12 +46,6 @@ export function App() {
       setExceptions(result.exceptions);
       setOrderStatusMap(result.orderStatusMap);
       setIsAuditing(false);
-
-      confetti({
-        particleCount: 50,
-        spread: 60,
-        origin: { y: 0.8 }
-      });
     }, 400);
   };
 
@@ -98,42 +91,42 @@ export function App() {
       />
 
       <main className="max-w-7xl mx-auto px-6">
-        <section className="mb-7">
+        <section className="mb-5">
           <p className="eyebrow mb-2">Reconciliation Overview</p>
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
             <div>
-              <h2 className="text-3xl font-bold tracking-tight text-white">Control your settlement health</h2>
-              <p className="mt-2 max-w-2xl text-sm text-slate-400">Monitor transaction matching, settlement discrepancies, and financial leakage across merchant, Razorpay, and bank records.</p>
+              <h2 className="text-2xl font-bold tracking-tight text-white">Reconciliation Overview</h2>
+              <p className="mt-1.5 max-w-2xl text-sm text-slate-400">Monitor transaction matching, settlement discrepancies, and potential financial leakage across merchant, Razorpay, and bank records.</p>
             </div>
             <div className="text-left md:text-right">
-              <p className="eyebrow">Last audit</p>
-              <p className="mt-1 text-sm text-slate-300">{new Date(summary.audit_timestamp).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })} · {summary.execution_time_ms} ms</p>
+              <p className="eyebrow">Last reconciliation</p>
+              <p className="mt-1 text-xs text-slate-300">{new Date(summary.audit_timestamp).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })} · {summary.execution_time_ms} ms</p>
             </div>
           </div>
         </section>
         
         <ExecutiveMetrics summary={summary} />
 
-        <section className="glass-card rounded-xl p-5 mb-6">
-          <div className="flex items-center justify-between mb-5">
+        <section className="glass-card rounded-xl p-4 mb-5">
+          <div className="flex items-center justify-between mb-3">
             <div>
               <p className="eyebrow">Reconciliation Health</p>
-              <h2 className="section-title mt-1">Three sources, one settlement view</h2>
+              <h2 className="section-title mt-1">Merchant → Razorpay → Bank</h2>
             </div>
             <span className="text-xs text-slate-400">{summary.matched_orders_count} matched · {summary.discrepancy_orders_count} exceptions</span>
           </div>
           <div className="health-track grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="relative flex items-center gap-3 bg-[#151d28] md:bg-transparent rounded-lg p-3 md:p-0">
+            <div className="relative flex items-center gap-3 bg-[#151d28] md:bg-transparent rounded-lg p-2 md:p-0">
               <div className="w-9 h-9 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center"><Landmark className="w-4 h-4 text-slate-300" /></div>
               <div><p className="text-sm font-semibold text-slate-200">Merchant records</p><p className="text-xs text-slate-500">{summary.total_orders_audited} orders loaded</p></div>
               <ArrowRight className="hidden md:block absolute -right-3 w-4 h-4 text-slate-600" />
             </div>
-            <div className="relative flex items-center gap-3 bg-[#151d28] md:bg-transparent rounded-lg p-3 md:p-0">
+            <div className="relative flex items-center gap-3 bg-[#151d28] md:bg-transparent rounded-lg p-2 md:p-0">
               <div className="w-9 h-9 rounded-lg bg-blue-500/10 border border-blue-400/30 flex items-center justify-center"><CheckCircle2 className="w-4 h-4 text-blue-300" /></div>
               <div><p className="text-sm font-semibold text-slate-200">Razorpay settlement</p><p className="text-xs text-slate-500">{summary.total_settled_value_inr.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })} logged</p></div>
               <ArrowRight className="hidden md:block absolute -right-3 w-4 h-4 text-slate-600" />
             </div>
-            <div className="flex items-center gap-3 bg-[#151d28] md:bg-transparent rounded-lg p-3 md:p-0">
+            <div className="flex items-center gap-3 bg-[#151d28] md:bg-transparent rounded-lg p-2 md:p-0">
               <div className={`w-9 h-9 rounded-lg flex items-center justify-center border ${summary.discrepancy_orders_count ? 'bg-amber-500/10 border-amber-400/30' : 'bg-emerald-500/10 border-emerald-400/30'}`}><AlertTriangle className={`w-4 h-4 ${summary.discrepancy_orders_count ? 'text-amber-300' : 'text-emerald-300'}`} /></div>
               <div><p className="text-sm font-semibold text-slate-200">Bank payout</p><p className="text-xs text-slate-500">{summary.total_bank_credited_inr.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })} credited</p></div>
             </div>
@@ -150,7 +143,7 @@ export function App() {
           exceptions={exceptions}
         />
 
-        <div className="flex flex-wrap items-center gap-1 mb-6 border-b border-slate-800 pb-3">
+        <div className="flex flex-wrap items-center gap-1 mb-4 border-b border-slate-800 pb-2">
           <button
             onClick={() => setActiveTab('GRID')}
             className={`flex items-center gap-2 px-3 py-2 rounded-md text-xs font-semibold transition-all cursor-pointer ${
@@ -159,8 +152,8 @@ export function App() {
                 : 'text-slate-500 hover:text-slate-200'
             }`}
           >
-            <LayoutGrid className="w-4 h-4" />
-            3-Way Data Grid ({dataset.merchant_orders.length})
+            <LayoutGrid className="w-3.5 h-3.5" />
+            Transactions
           </button>
 
           <button
@@ -171,8 +164,8 @@ export function App() {
                 : 'text-slate-500 hover:text-slate-200'
             }`}
           >
-            <ShieldAlert className="w-4 h-4 text-rose-400" />
-            Isolated Exceptions ({exceptions.length})
+            <ShieldAlert className="w-3.5 h-3.5 text-rose-400" />
+            Exceptions
           </button>
 
           <button
@@ -183,8 +176,8 @@ export function App() {
                 : 'text-slate-500 hover:text-slate-200'
             }`}
           >
-            <BarChart2 className="w-4 h-4 text-cyan-400" />
-            Financial Leakage Analytics & Bank Ledger
+            <BarChart2 className="w-3.5 h-3.5 text-cyan-400" />
+            Financial Insights
           </button>
         </div>
 
