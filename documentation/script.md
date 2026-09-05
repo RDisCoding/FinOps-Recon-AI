@@ -1,44 +1,101 @@
-# FinOps Recon AI - 2-Minute Judge Demo Script
+# FinOps Recon AI - Simple 4-Minute Demo Script
 
-This script is aligned with the current live application. It avoids claiming a live dispute ticket, evidence submission, or production-grade accuracy where those are not currently implemented.
+Open the live demo: https://finops-recon-ai.vercel.app/
 
-## Before Recording
+Keep the default 500-record demo loaded. Speak naturally, move slowly enough for the audience to follow, and let the screen do most of the explaining.
 
-- Open the live app: https://finops-recon-ai.vercel.app/
-- Keep the browser at a laptop/desktop viewport.
-- Start on the **Transactions** tab with the default 500-record injected-error dataset.
-- If Groq is configured in the deployment, the Recon Assistant will use the LLM. If not, its deterministic fallback still demonstrates the workflow.
-- Do not promise a Razorpay dispute ID. The current Test Mode account has no disputes, so show the explicit empty state if the dispute modal is opened.
+## Script
 
-## Timed Script
+### 0:00 - 0:20 - Introduction
 
-| Timestamp | Screen action | Speaker script |
-| :--- | :--- | :--- |
-| **0:00 - 0:20** | Show the first viewport: header, KPI cards, and **Reconciliation Health** flow. | "Hi judges. FinOps Recon AI is a financial operations console for finding leakage between three sources that normally drift apart: merchant records, Razorpay settlements, and actual bank payouts. The first screen makes that relationship explicit: Merchant, Razorpay, Bank, then matched transactions and exceptions." |
-| **0:20 - 0:42** | Point to **Potential Recovery**, **Match Rate**, **Open Exceptions**, and **Volume Audited**. | "Our default demo runs 500 synthetic records with 25 seeded exception cases. The engine calculates a 95% match rate, identifies the affected records, and quantifies ₹1,06,472.57 in potential recovery. These benchmark figures are measured on the synthetic dataset, so they demonstrate the rule engine rather than claim production accuracy." |
-| **0:42 - 1:00** | Click **Re-Audit Current Batch**, then show the transaction table. | "I can re-run the three-way audit from the demo controls without changing the workflow. The transaction workspace keeps the important evidence together: order ID, customer and payment method, merchant amount, Razorpay MDR and GST, net payout, bank verification, and the action for an exception." |
-| **1:00 - 1:20** | Click **Exceptions**, filter an error type, and open an exception such as `ORD_10015`. | "The Exceptions view turns a mismatch into an investigation queue. For each issue we can see the affected order, batch, expected value, actual value, severity, and financial impact. Opening an exception gives us the audit proof, a generated support-ticket draft, and a printable dispute packet." |
-| **1:20 - 1:40** | Open **Recon Assistant** and run a suggested prompt such as the Tuesday payout question or `Explain Order ORD_10015 GST calculation error`. | "The Recon Assistant answers questions against the current audit context. With Groq configured, this request is sent to the LLM with the batch summary and exception records; without a key, the deterministic fallback keeps the demo reliable. The response is constrained to the supplied records and can link an order question back to its exception." |
-| **1:40 - 1:55** | Click **Parse Messy Bank CSV**, click **Load Sample Bank Statement**, then **Run Fuzzy AI Ingestion Parser**. | "Bank statements are rarely shaped like clean API responses. Here I can paste raw narration or CSV content, extract dates, UTRs, amounts, and remitters, inspect confidence, and apply the resulting credits back into the three-way audit. The parser is also tested against a supplied CSV fixture containing both credit and debit rows." |
-| **1:55 - 2:00** | Return to the overview and close on the health flow. | "The result is a focused reconciliation workflow: compare the three sources, isolate the exceptions, quantify potential recovery, and give finance teams an investigation assistant and evidence packet without pretending that synthetic data or an unavailable Razorpay dispute is production evidence. Thank you." |
+**Show:** The full overview screen.
 
-## Optional Razorpay Explanation
+**Say:**
 
-If a judge asks about the dispute action, use this exact explanation:
+> "Hi judges, I’m [your name]. This is FinOps Recon AI, our Track 04 AI Finance Controller submission. It is a financial reconciliation tool for merchants. It compares their own transaction records with Razorpay settlement data and the money that actually reaches the bank. I’ll show how it finds mismatches, explains the financial impact, and helps the finance team investigate them."
 
-> "The app does not fabricate or create disputes. Razorpay disputes originate from a customer or issuing bank. Our Vercel serverless adapter lists existing disputes through Razorpay and can send a real `PATCH /v1/disputes/:id/contest` request in documented draft mode using server-side credentials. This Test Mode account currently has no disputes, so the UI reports that state rather than showing a fake success. Evidence upload and `action: submit` are intentionally deferred."
+### 0:20 - 0:45 - The three-way reconciliation idea
 
-## Optional Analytics Segment
+**Show:** The Reconciliation Health section and the Merchant -> Razorpay -> Bank flow.
 
-If there is extra time, click **Financial Insights** and say:
+**Say:**
 
-> "Financial Insights breaks the detected impact down by error category and compares expected Razorpay settlement batches with actual bank credits. This lets an operator move from the headline recovery number to the category and payout batch that needs investigation."
+> "The core idea is simple. Money starts with a merchant transaction, is processed and settled by Razorpay, and is finally credited to the merchant's bank. Small differences can happen in fees, GST, refunds, promotions, or missing payouts. FinOps Recon checks these three sources together instead of making a finance user compare them manually."
 
-## Claims to Avoid
+### 0:45 - 1:10 - Audit results and financial impact
 
-- Do not say the app creates a Razorpay dispute.
-- Do not say it assigns a support ticket ID or sends a webhook.
-- Do not say the current flow submits evidence for review.
-- Do not call the dataset real merchant data.
-- Do not claim 98% parser accuracy; the parser exposes confidence for each extracted row.
-- Do not describe the Q&A as autonomous; call it the **Recon Assistant**.
+**Show:** Potential Recovery, Match Rate, Open Exceptions, and Volume Audited.
+
+**Say:**
+
+> "The default demo runs 500 sample transactions with 25 seeded exception cases. The dashboard shows a 95% match rate, 25 open exceptions, and ₹1,06,472.57 in potential recovery. The volume card also shows the total order value, what Razorpay logged, and what the bank credited. These figures come from our synthetic dataset, so they demonstrate the audit rules rather than claim production accuracy on live merchant data."
+
+### 1:10 - 1:30 - Demo controls and re-audit
+
+**Show:** The Demo Dataset controls.
+
+**Say:**
+
+> "The demo controls let me switch between 100, 500, and 1,000 records. I can also turn the seeded exception scenario on or off, re-audit the current batch, and export the exception ledger as a CSV. These are demo controls, but they use the same reconciliation workflow each time."
+
+### 1:30 - 1:55 - Inspect transactions
+
+**Show:** The Transactions tab and one exception row.
+
+**Say:**
+
+> "The Transactions view is the main working area. Each row shows the order and customer, payment method, merchant amount, agreed MDR, Razorpay MDR and GST, net payout, payout batch, and bank verification. I can search by order, customer, or batch, and filter to matched records, all discrepancies, or a specific error type."
+
+### 1:55 - 2:25 - Investigate an exception
+
+**Show:** The Exceptions tab, filter one category, and open an exception such as `ORD_10015`.
+
+**Say:**
+
+> "The Exceptions view turns the findings into an investigation queue. I can filter by MDR overcharge, GST error, ghost payout, double refund, or promo misallocation. Opening an exception shows the affected order, settlement and batch IDs, expected value, actual value, severity, and financial impact. I can copy the generated support-ticket draft or download a printable dispute packet."
+
+### 2:25 - 2:55 - Ask the Recon Assistant
+
+**Show:** Open Recon Assistant and use a suggested question.
+
+**Say:**
+
+> "The Recon Assistant lets a finance user ask questions in plain language. I can ask why a payout was lower, which errors were found, or why a specific order was flagged. When Groq is configured, the app sends the current summary and exception data to the language model. If the key is unavailable, the built-in fallback still answers from the same audit data, so the demo remains usable."
+
+### 2:55 - 3:20 - Import bank data
+
+**Show:** Parse Messy Bank CSV, load the sample, run the parser, and show the extracted rows.
+
+**Say:**
+
+> "Bank statements are often messy and do not look like API responses. I can paste raw narration or CSV data here, extract dates, references, amounts, and remitters, review the confidence of each row, and apply the credits back to the audit. The parser handles credit and debit rows separately, so a debit is not incorrectly treated as a bank payout."
+
+### 3:20 - 3:45 - Financial Insights
+
+**Show:** Click **Financial Insights**.
+
+**Say:**
+
+> "The Financial Insights tab gives a higher-level view. The charts show how much leakage belongs to each error category and how frequently each category appears. The bank payout ledger then compares the expected Razorpay settlement for each batch with the amount actually credited by the bank."
+
+### 3:45 - 4:00 - Close
+
+**Show:** Return to the overview.
+
+**Say:**
+
+> "So the complete workflow is: compare the three sources, identify the exceptions, measure the financial impact, investigate with the Recon Assistant, validate bank data, and export or document the next action. That is FinOps Recon AI: a practical way to make settlement reconciliation easier to understand and act on. Thank you."
+
+## If Asked About Razorpay Disputes
+
+Say:
+
+> "The app does not invent or create disputes. Razorpay disputes come from a customer or bank. When an existing Test Mode dispute is available, our secure server adapter can list it and create a real draft contest request. This account currently has no disputes, so the app shows that clearly instead of faking a successful submission."
+
+## Avoid Saying
+
+- "The app creates a Razorpay dispute."
+- "A webhook assigned a support ticket."
+- "The app submits evidence for review."
+- "These are real merchant transactions."
+- "The parser is 98% accurate."
